@@ -1,0 +1,8 @@
+#!/bin/sh
+set -eu;
+docker run -d --name graphite --restart=always -p 8080:80 -p 2003-2004:2003-2004 graphiteapp/graphite-statsd;
+docker cp ./conf/carbon.conf graphite:/opt/graphite/conf/carbon.conf;
+docker cp ./conf/storage-schemas.conf graphite:/opt/graphite/conf/storage-schemas.conf;
+docker exec graphite chown root:root /opt/graphite/conf/carbon.conf;
+docker exec graphite chown root:root /opt/graphite/conf/storage-schemas.conf;
+docker restart graphite;

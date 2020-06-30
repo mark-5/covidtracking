@@ -1,0 +1,62 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use FindBin qw( $Bin );
+use File::Spec;
+use Getopt::Long qw( GetOptionsFromArray );
+use Pod::Usage qw( pod2usage );
+
+BEGIN {
+    my $root = File::Spec->catdir($Bin, '..');
+    push @INC, File::Spec->catdir($root, 'lib');
+}
+use CovidTracking::Pipeline::PerMillion;
+use CovidTracking::Pipeline::Rate;
+use CovidTracking::Source::Daily;
+use CovidTracking::Sink::Graphite;
+
+=head1 NAME
+
+load
+
+=head1 SYNOPSIS
+
+    load [OPTIONS]
+
+=head1 OPTIONS
+
+=head2 --help
+
+Display this page
+
+=cut
+
+sub getopts {
+    my (@argv) = @_;
+    my %opts;
+
+    GetOptionsFromArray(
+        \@argv,
+        \%opts,
+		'update|u',
+        'help|?',
+    ) or pod2usage();
+    pod2usage(-verbose => 99) if $opts{help};
+
+    return (\%opts, @argv);
+}
+
+sub main {
+    my ($opts) = getopts(@_);
+    my $source = CovidTracking::Source::Daily->new(%$opts);
+    my $data   = $source->run();
+    $data      = $_->run($data) for
+        CovidTracking::Pipeline::Rate->new,
+        CovidTracking::Pipeline::PerMillion->new;
+
+    my $sink = CovidTracking::Sink::Graphite->new;
+    $sink->run($data);
+
+    return 0;
+}
+exit main(@ARGV) unless caller;
