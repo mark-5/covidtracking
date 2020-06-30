@@ -33,7 +33,7 @@ sub states {
     my $url = 'https://covidtracking.com/api/v1/states/daily.json';
     my $res = HTTP::Tiny->new->get($url);
     if ( ! $res->{success} ) {
-        die "error getting $url: $res->{status} $res->{reason}\n";
+        die "error getting $url: $res->{status} $res->{reason}\n\n$res->{content}";
     }
 
     my $decoded = eval { decode_json($res->{content}) };
@@ -48,7 +48,7 @@ sub total {
     my $url = 'https://covidtracking.com/api/v1/us/daily.json';
     my $res = HTTP::Tiny->new->get($url);
     if ( ! $res->{success} ) {
-        die "error getting $url: $res->{status} $res->{reason}\n";
+        die "error getting $url: $res->{status} $res->{reason}\n\n$res->{content}";
     }
 
     my $decoded = eval { decode_json($res->{content}) };

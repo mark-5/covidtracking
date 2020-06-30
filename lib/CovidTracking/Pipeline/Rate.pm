@@ -10,29 +10,31 @@ sub run {
         positive           => 'totalTestResults',
         negativeTestsViral => 'totalTestsViral',
         positiveTestsViral => 'totalTestsViral',
-        death              => ['death', 'recovered'],
-        recovered          => ['death', 'recovered'],
     );
 
-    for my $datum (@$data) {
+    my %last;
+    for (my $i = $#{ $data }; $i >= 0; $i--) {
+        my $datum = $data->[$i];
         my $state = $datum->{state} or next;
+        my $last  = $last{$state};
 
-        FIELD: for my $field (sort keys %fields) {
-            my $value = $datum->{$field};
-            next if ! defined $value;
+        for my $field (sort keys %fields) {
+            my $current = $datum->{$field};
+            my $prev    = $last->{$field};
+            next if grep { ! defined $_ } $current, $prev;
 
-            my $total;
-            if ( ref($fields{$field}) ) {
-                my @args = @{ $datum }{ @{ $fields{$field} } };
-                next FIELD if grep { ! defined $_ } @args;
-                $total = sum(@args);
-            } else {
-                $total = $datum->{$fields{$field}};
-            }
-            next if ! $total;
+            my $currentTotal = $datum->{$fields{$field}};
+            my $prevTotal    = $last->{$fields{$field}};
+            next if grep { ! defined $_ } $currentTotal, $prevTotal;
 
-            $datum->{rate}{$field} = 100 * $value / $total;
+            my $delta = $current - $prev;
+            my $total = $currentTotal - $prevTotal;
+            next if $total <= 0;
+
+            $datum->{rate}{$field} = 100 * $delta / $total;
         }
+
+        $last{$state} = $datum;
     }
 
     return $data;

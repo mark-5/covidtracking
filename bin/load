@@ -38,7 +38,8 @@ sub getopts {
     GetOptionsFromArray(
         \@argv,
         \%opts,
-		'update|u',
+        'dryrun|dry-run|n',
+        'update|u',
         'help|?',
     ) or pod2usage();
     pod2usage(-verbose => 99) if $opts{help};
@@ -54,7 +55,9 @@ sub main {
         CovidTracking::Pipeline::Rate->new,
         CovidTracking::Pipeline::PerMillion->new;
 
-    my $sink = CovidTracking::Sink::Graphite->new;
+    my $sink = CovidTracking::Sink::Graphite->new(
+        (graphite => \*STDOUT)x!! $opts->{dryrun},
+    );
     $sink->run($data);
 
     return 0;
