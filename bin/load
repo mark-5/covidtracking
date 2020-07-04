@@ -10,10 +10,10 @@ BEGIN {
     my $root = File::Spec->catdir($Bin, '..');
     push @INC, File::Spec->catdir($root, 'lib');
 }
-use CovidTracking::Pipeline::PerMillion;
-use CovidTracking::Pipeline::Rate;
-use CovidTracking::Source::Daily;
-use CovidTracking::Sink::Graphite;
+use CovidReporting::Pipeline::PerMillion;
+use CovidReporting::Source::CovidTracking;
+use CovidReporting::Source::OWID;
+use CovidReporting::Sink::Graphite;
 
 =head1 NAME
 
@@ -49,13 +49,16 @@ sub getopts {
 
 sub main {
     my ($opts) = getopts(@_);
-    my $source = CovidTracking::Source::Daily->new(%$opts);
-    my $data   = $source->run();
-    $data      = $_->run($data) for
-        CovidTracking::Pipeline::Rate->new,
-        CovidTracking::Pipeline::PerMillion->new;
 
-    my $sink = CovidTracking::Sink::Graphite->new(
+	my $data;
+	push @$data, @{ $_->run() } for
+		CovidReporting::Source::CovidTracking->new(%$opts),
+		CovidReporting::Source::OWID->new(%$opts);
+
+    $data = $_->run($data) for
+        CovidReporting::Pipeline::PerMillion->new;
+
+    my $sink = CovidReporting::Sink::Graphite->new(
         (graphite => \*STDOUT)x!! $opts->{dryrun},
     );
     $sink->run($data);
