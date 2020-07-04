@@ -45,11 +45,12 @@ sub _build_populations {
     for my $id ( grep { /^\d+$/ } sort keys %$countries ) {
         my $country = code2country($id, LOCALE_CODE_NUMERIC);
         my $alpha   = country2code($country, LOCALE_CODE_ALPHA_3);
-        $countries->{ $alpha } = 1000 * delete($countries->{ $id });
+        $countries->{ $alpha } = delete($countries->{ $id });
     }
+    $countries->{$_}     *= 1000 for sort keys %$countries;
     $populations{country} = $countries;
 
-    $populations{state} = $self->load_file($self->states);;
+    $populations{state} = $self->load_file($self->states);
 
     return \%populations;
 }
@@ -87,6 +88,8 @@ sub run {
 
     for my $datum (@$data) {
         my $country = $datum->{metadata}{country} or next;
+        next if $datum->{values}{perMillion};
+
         if ( my $state = $datum->{metadata}{state} ) {
             my $population = $populations->{state}{$state} or next;
             $datum->{values}{perMillion} = $self->scale($datum->{values}, $population);

@@ -31,38 +31,38 @@ sub parse {
 }
 
 sub metrics {
-	my ($self, $datum, $base) = @_;
+    my ($self, $datum, $base) = @_;
 
-	my @metrics;
-	for my $field (sort keys %$datum) {
-		my $value = $datum->{$field};
-		if ( ref($value) ) {
-			push @metrics, $self->metrics($value, "$base.$field");
-		} elsif ( defined($value) ) {
-			push @metrics, [ "$base.$field", $value ];
-		}
-	}
+    my @metrics;
+    for my $field (sort keys %$datum) {
+        my $value = $datum->{$field};
+        if ( ref($value) ) {
+            push @metrics, $self->metrics($value, "$base.$field");
+        } elsif ( defined($value) ) {
+            push @metrics, [ "$base.$field", $value ];
+        }
+    }
 
-	return @metrics;
+    return @metrics;
 }
 
 sub load {
     my ($self, $datum) = @_;
     my $date           = $datum->{metadata}{date}    or return;
-	my $country        = $datum->{metadata}{country} or return;
-    my $epoch          = $self->parse($date) 		 or return;
+    my $country        = $datum->{metadata}{country} or return;
+    my $epoch          = $self->parse($date)          or return;
     my $graphite       = $self->graphite;
 
-	my $base = $datum->{metadata}{source};
-	if ( my $state = $datum->{metadata}{state} ) {
-		$base .= ".state.$state";
-	} else {
-		$base .= ".country.$country";
-	}
+    my $base = $datum->{metadata}{source};
+    if ( my $state = $datum->{metadata}{state} ) {
+        $base .= ".state.$state";
+    } else {
+        $base .= ".country.$country";
+    }
 
-	for my $metric ( $self->metrics($datum->{values}, $base) ) {
-		$graphite->print("$metric->[0] $metric->[1] $epoch\n");
-	}
+    for my $metric ( $self->metrics($datum->{values}, $base) ) {
+        $graphite->print("$metric->[0] $metric->[1] $epoch\n");
+    }
 
     return;
 }

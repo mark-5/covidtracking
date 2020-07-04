@@ -24,13 +24,27 @@ sub format {
         total_cases  => 'cases',
         total_deaths => 'deaths',
         total_tests  => 'tests',
+        total_cases_per_million  => [ 'perMillion', 'cases'  ],
+        total_deaths_per_million => [ 'perMillion', 'deaths' ],
+        total_tests_per_thousand => [ 'perMillion', 'tests'  ],
     );
 
     my $values = {};
     for my $label (sort keys %mapping) {
         my $value = $datum->{$label};
         next if ! defined $value or ! length($value);
-        $values->{  $mapping{$label} } = $value;
+
+        my $field = $mapping{$label};
+        if ( ref($field) ) {
+            my $slot = $values;
+            for (my $i = 0; $i < $#{ $field }; $i++) {
+                $slot = $slot->{ $field->[$i] } ||= {};
+            }
+            $slot->{ $field->[-1] }  = $value;
+            $slot->{ $field->[-1] } *= 1000 if $label =~ /_per_thousand$/;
+        } else {
+            $values->{$field} = $value;
+        }
     }
 
     return {
