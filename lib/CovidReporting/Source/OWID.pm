@@ -20,6 +20,8 @@ sub _build_file {
 
 sub format {
     my ($self, $datum) = @_;
+    my $country        = $datum->{iso_code} or return;
+    $country           = undef if $country eq 'OWID_WRL';
     my %mapping        = (
         total_cases  => 'cases',
         total_deaths => 'deaths',
@@ -50,9 +52,10 @@ sub format {
     return {
         values   => $values,
         metadata => {
-            country => $datum->{iso_code},
+            country => $country,
             date    => $datum->{date},
             source  => 'owid',
+            total   => ! $country,
         },
     };
 }

@@ -80,6 +80,7 @@ sub format {
             date      => "$y-$m-$d",
             state     => $datum->{state},
             source    => 'covidtracking',
+			total	  => ! $datum->{state},
         },
     };
 }

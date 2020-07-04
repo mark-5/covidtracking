@@ -48,13 +48,15 @@ sub metrics {
 
 sub load {
     my ($self, $datum) = @_;
-    my $date           = $datum->{metadata}{date}    or return;
-    my $country        = $datum->{metadata}{country} or return;
-    my $epoch          = $self->parse($date)          or return;
+    my $date           = $datum->{metadata}{date} or return;
+    my $epoch          = $self->parse($date)      or return;
+    my $country        = $datum->{metadata}{country};
     my $graphite       = $self->graphite;
 
     my $base = $datum->{metadata}{source};
-    if ( my $state = $datum->{metadata}{state} ) {
+	if ( $datum->{metadata}{total} ) {
+        $base .= ".total.total";
+    } elsif ( my $state = $datum->{metadata}{state} ) {
         $base .= ".state.$state";
     } else {
         $base .= ".country.$country";
