@@ -77,9 +77,14 @@ sub load {
 }
 
 sub run {
-    my ($self) = @_;
-    my $data   = $self->load();
-    return [ map { $self->format($_) } @$data ];
+    my ($self)  = @_;
+    my $records = $self->load();
+
+    my @data;
+    while ( my $record = pop(@$records) ) {
+        push @data, $self->format($record);
+    }
+    return \@data;
 }
 
 1;

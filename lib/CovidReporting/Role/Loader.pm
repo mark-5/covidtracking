@@ -7,18 +7,33 @@ use Moo::Role;
 
 sub load_csv {
     my ($self, $file) = @_;
-
-    my @lines;
+    my $getline;
     if ( ref($file) ) {
-        @lines = $file->getlines();
+        $getline = sub {
+            chomp(my $line = $file->getline());
+            return $line;
+        };
     } else {
-        @lines = split(/\n/, $file);
+        my $last = 0;
+        $getline = sub {
+            return if ! defined($last );
+            my $i = index($file, "\n", $last);
+            if ( $i == -1 ) {
+                ( my $line = substr($file, $last) ) =~ s/(^\s+)|(\s+$)//;
+                $last    = undef;
+                return $line;
+            } else {
+                ( my $line = substr($file, $last, $i - $last) ) =~ s/(^\s+)|(\s+$)//;
+                $last    = $i + 1;
+                $last    = undef if $last >= length($file);
+                return $line;
+            }
+        };
     }
-    s/\s+$// for @lines;
 
     my @data;
-    my @headers = parse_line(',', 0, $lines[0]);
-    for my $line ( @lines[ 1 .. $#lines ] ) {
+    my @headers = parse_line(',', 0, $getline->());
+    while (defined( my $line = $getline->() )) {
         my $datum  = {};
         my @values = parse_line(',', 0, $line);
         for (my $i = 0; $i < @values; $i++) {
@@ -76,7 +91,7 @@ sub write_csv {
             $fh->print(join(',', map { $_ // '' } @$row), "\n");
         }
     } elsif ( $ref eq 'HASH' ) {
-        my %fields  = map { %$_ } @$rows;
+        my %fields; %fields = (%fields, %$_) for @$rows;
         my @headers = sort keys %fields;
         $fh->print(join(',', @headers), "\n");
         for my $row (@$rows) {
