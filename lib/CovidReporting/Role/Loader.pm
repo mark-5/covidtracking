@@ -10,13 +10,16 @@ sub load_csv {
     my $getline;
     if ( ref($file) ) {
         $getline = sub {
-            chomp(my $line = $file->getline());
+            my $line = $file->getline();
+            return unless defined($line);
+
+            chomp($line);
             return $line;
         };
     } else {
         my $last = 0;
         $getline = sub {
-            return if ! defined($last );
+            return if ! defined($last);
             my $i = index($file, "\n", $last);
             if ( $i == -1 ) {
                 ( my $line = substr($file, $last) ) =~ s/(^\s+)|(\s+$)//;

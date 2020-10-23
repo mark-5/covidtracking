@@ -18,6 +18,7 @@ sub _build_file {
     );
 }
 
+our %LAST;
 sub format {
     my ($self, $datum) = @_;
     my $country        = $datum->{iso_code} or return;
@@ -30,10 +31,22 @@ sub format {
         total_deaths_per_million => [ 'perMillion', 'deaths' ],
         total_tests_per_thousand => [ 'perMillion', 'tests'  ],
     );
+    my %daily = (
+        total_tests              => 'new_tests',
+        total_tests_per_thousand => 'new_tests_per_thousand',
+    );
 
     my $values = {};
     for my $label (sort keys %mapping) {
         my $value = $datum->{$label};
+        my $daily = $daily{$label};
+        if ( ( ! defined $value or ! length($value) ) and $daily ) {
+            my $new = delete($datum->{$daily});
+            next if ! defined $new or ! length($new);
+
+            my $total = $LAST{ $country }{ $daily } || 0;
+            $value    = $LAST{ $country }{ $daily } = $total + $new;
+        }
         next if ! defined $value or ! length($value);
 
         my $field = $mapping{$label};
@@ -79,6 +92,7 @@ sub load {
 sub run {
     my ($self)  = @_;
     my $records = $self->load();
+    local(%LAST);
 
     my @data;
     while ( my $record = pop(@$records) ) {
