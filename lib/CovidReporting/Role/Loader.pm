@@ -94,7 +94,10 @@ sub write_csv {
             $fh->print(join(',', map { $_ // '' } @$row), "\n");
         }
     } elsif ( $ref eq 'HASH' ) {
-        my %fields; %fields = (%fields, %$_) for @$rows;
+        my %fields;
+        for my $row (@$rows) {
+            $fields{$_} =  $row->{$_} for keys %$row;
+        }
         my @headers = sort keys %fields;
         $fh->print(join(',', @headers), "\n");
         for my $row (@$rows) {

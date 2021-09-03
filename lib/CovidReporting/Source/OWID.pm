@@ -94,11 +94,11 @@ sub run {
     my $records = $self->load();
     local(%LAST);
 
-    my @data;
-    while ( my $record = pop(@$records) ) {
-        push @data, $self->format($record);
+    for (my $i = 0; $i <= $#{ $records }; $i++) {
+        $records->[$i] = $self->format($records->[$i]);
     }
-    return \@data;
+
+    return $records;
 }
 
 1;
